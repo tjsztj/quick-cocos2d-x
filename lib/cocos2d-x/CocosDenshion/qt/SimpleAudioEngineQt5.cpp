@@ -53,10 +53,12 @@ class CocosQt5AudioBackend {
         static QMediaPlayer *player() {
             if (background_music == NULL) {
                 background_music = new QMediaPlayer;
+            }
+
+            if (!background_music->playlist()) {
                 QMediaPlaylist *playList = new QMediaPlaylist(background_music);
                 background_music->setPlaylist(playList);
             }
-
             return background_music;
         }
 

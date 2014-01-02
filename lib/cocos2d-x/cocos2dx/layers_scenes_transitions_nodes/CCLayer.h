@@ -86,16 +86,16 @@ public:
     virtual void onEnterTransitionDidFinish();
 
     // default implements are used to call script callback if exist
-    virtual int ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
-    virtual int ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent);
-    virtual void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent);
-    virtual void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
+//    virtual int ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
+//    virtual int ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent);
+//    virtual void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent);
+//    virtual void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
 
     // default implements are used to call script callback if exist
-    virtual void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
-    virtual void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
-    virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
-    virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
+//    virtual void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
+//    virtual void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
+//    virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
+//    virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
     /**
      * @js NA
      * @lua NA
@@ -114,8 +114,8 @@ public:
     }
     @since v0.8.0
     */
-    virtual void registerWithTouchDispatcher(void);
-    virtual void unregisterWithTouchDispatcher(void);
+//    virtual void registerWithTouchDispatcher(void);
+//    virtual void unregisterWithTouchDispatcher(void);
 
     /** whether or not it will receive Accelerometer events
     You can enable / disable accelerometer events with this property.

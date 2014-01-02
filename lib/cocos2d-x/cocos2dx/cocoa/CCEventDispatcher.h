@@ -26,6 +26,8 @@
 #define __CCEVENT_DISPATCHER_H__
 
 #include <map>
+#include <vector>
+#include <algorithm>
 
 #include "ccMacros.h"
 #include "CCObject.h"
@@ -40,6 +42,7 @@ NS_CC_BEGIN
 #define kCCNodeOnExitTransitionDidStart         4
 #define kCCNodeOnCleanup                        5
 #define kCCNodeOnEnterFrame                     6
+#define kCCNodeOnTouch                          7
 
 #define ENTER_SCENE_EVENT                       kCCNodeOnEnter
 #define EXIT_SCENE_EVENT                        kCCNodeOnExit
@@ -47,30 +50,53 @@ NS_CC_BEGIN
 #define EXIT_TRANSITION_DID_START_EVENT         kCCNodeOnExitTransitionDidStart
 #define CLEANUP_EVENT                           kCCNodeOnCleanup
 #define ENTER_FRAME_EVENT                       kCCNodeOnEnterFrame
+#define TOUCH_EVENT                             kCCNodeOnTouch
 
-typedef map<int, int> ScriptHandlerMap;
-typedef ScriptHandlerMap::iterator ScriptHandlerMapIterator;
+#define kCCTouchesAllAtOnce         0
+#define kCCTouchesOneByOne          1
 
-typedef map<int, ScriptHandlerMap> ScriptEventHandlerMap;
+#define kCCTouchIgnore              0
+
+#define kCCTouchBegan               1
+#define kCCTouchBeganSwallows       kCCTouchBegan
+#define kCCTouchBeganNoSwallows     2
+
+#define kCCTouchMoved               1
+#define kCCTouchMovedSwallows       kCCTouchMoved
+#define kCCTouchMovedNoSwallows     0
+#define kCCTouchMovedReleaseOthers  2
+
+/**
+ * callbacks[event] = [callback, callback, callback, ...]
+ */
+
+typedef struct ScriptHandler_ {
+    int callback;
+    int priority;
+} ScriptHandler;
+
+typedef vector<ScriptHandler> ScriptHandlerArray;
+typedef ScriptHandlerArray::iterator ScriptHandlerArrayIterator;
+
+typedef map<int, ScriptHandlerArray> ScriptEventHandlerMap;
 typedef ScriptEventHandlerMap::iterator ScriptEventHandlerMapIterator;
 
 class CC_DLL CCEventDispatcher : public CCObject
 {
 public:
-    int addScriptEventListener(int event, int callback);
+    int addScriptEventListener(int event, int callback, int priority = 0);
     void removeScriptEventListener(int event, int handle);
     void removeAllScriptEventListenersForEvent(int event);
     void removeAllScriptEventListeners();
 
     bool hasScriptEventListener(int event);
-    ScriptHandlerMap &getScriptEventListenerForEvent(int event);
+    ScriptHandlerArray &getAllScriptEventListenersForEvent(int event);
     ScriptEventHandlerMap &getAllScriptEventListeners();
 
     virtual void scheduleUpdateForNodeEvent() = 0;
 
 private:
     ScriptEventHandlerMap m_map;
-    static int s_nextid;
 };
 
 NS_CC_END

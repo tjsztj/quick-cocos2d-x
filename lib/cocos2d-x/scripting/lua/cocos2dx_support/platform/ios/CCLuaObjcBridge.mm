@@ -136,7 +136,7 @@ int CCLuaObjcBridge::callObjcStaticMethod(lua_State *L)
                 NSArray *array = (NSArray *)obj;
                 NSString *methodName_ = [NSString stringWithCString:methodName encoding:NSUTF8StringEncoding];
                 NSArray *argNames = [methodName_ componentsSeparatedByString:@":"];
-                int argCount = [argNames count];
+                int argCount = (int)[argNames count];
                 if (argCount > [array count]) {
                     lua_pushboolean(L, 0);
                     lua_pushinteger(L, kCCLuaBridgeErrorInvalidParameters);
@@ -379,10 +379,10 @@ void CCLuaObjcBridge::pushValue(lua_State *L, void *val)
     {
         // added by guorui.chen
         lua_newtable(L);
-        int count = [oval count];
+        int count = (int)[oval count];
         for (int i=0; i<count; ++i)
         {
-            int len = lua_objlen(L, -1);
+            int len = (int)lua_objlen(L, -1);
             pushValue(L, [oval objectAtIndex:i]);
             lua_rawseti(L, -2, len+1);
         }

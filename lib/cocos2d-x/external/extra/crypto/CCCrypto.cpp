@@ -87,11 +87,11 @@ void CCCrypto::MD5File(const char* path, unsigned char* output)
     MD5_CTX ctx;
     MD5_Init(&ctx);
     
-    int i;
+    size_t i;
     const int BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
     while ((i = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-        MD5_Update(&ctx, buffer, (unsigned) i);
+        MD5_Update(&ctx, buffer, i);
     }
     
     fclose(file);

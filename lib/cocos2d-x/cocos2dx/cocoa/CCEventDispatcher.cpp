@@ -27,52 +27,55 @@
 
 NS_CC_BEGIN
 
-int CCEventDispatcher::s_nextid = 0;
-
-int CCEventDispatcher::addScriptEventListener(int event, int callback)
+bool less_priority(const ScriptHandler &a, const ScriptHandler &b)
 {
-    s_nextid++;
-    m_map[event][s_nextid] = callback;
+    return a.priority < b.priority;
+}
 
+int CCEventDispatcher::addScriptEventListener(int event, int callback, int priority /* = 0 */)
+{
+    ScriptHandlerArray &arr = m_map[event];
+    arr.push_back({callback, priority});
+    sort(arr.begin(), arr.end(), less_priority);
     if (event == ENTER_FRAME_EVENT)
     {
         scheduleUpdateForNodeEvent();
     }
-    return s_nextid;
+    return callback;
 }
 
 void CCEventDispatcher::removeScriptEventListener(int event, int handle)
 {
-    ScriptEventHandlerMapIterator it = m_map.find(event);
-    if (it != m_map.end())
+    ScriptEventHandlerMapIterator mapit = m_map.find(event);
+    if (mapit == m_map.end()) return;
+
+    ScriptHandlerArray &arr = mapit->second;
+    CCScriptEngineProtocol *engine = CCScriptEngineManager::sharedManager()->getScriptEngine();
+    for (ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
     {
-        ScriptHandlerMap &handlers = it->second;
-        ScriptHandlerMapIterator it2 = handlers.find(handle);
-        if (it2 != handlers.end())
+        if (it->callback == handle)
         {
-            int callback = it2->second;
-            CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(callback);
-            LUALOG("[LUA] Remove script event listener: %d", callback);
-            it->second.erase(it2);
+            engine->removeScriptHandler(handle);
+            arr.erase(it);
+            LUALOG("[LUA] Remove script event listener: %d", handle);
+            break;
         }
     }
 }
 
 void CCEventDispatcher::removeAllScriptEventListenersForEvent(int event)
 {
-    ScriptEventHandlerMapIterator it = m_map.find(event);
-    if (it != m_map.end())
-    {
-        ScriptHandlerMap &handlers = it->second;
-        for (ScriptHandlerMapIterator it2 = handlers.begin(); it2 != handlers.end(); ++it2)
-        {
-            int callback = it2->second;
-            CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(callback);
-            LUALOG("[LUA] Remove script event listener: %d", callback);
-        }
+    ScriptEventHandlerMapIterator mapit = m_map.find(event);
+    if (mapit == m_map.end()) return;
 
-        m_map.erase(it);
+    ScriptHandlerArray &arr = mapit->second;
+    CCScriptEngineProtocol *engine = CCScriptEngineManager::sharedManager()->getScriptEngine();
+    for (ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
+    {
+        engine->removeScriptHandler(it->callback);
+        LUALOG("[LUA] Remove script event listener: %d", it->callback);
     }
+    m_map.erase(mapit);
 }
 
 void CCEventDispatcher::removeAllScriptEventListeners()
@@ -89,7 +92,7 @@ bool CCEventDispatcher::hasScriptEventListener(int event)
     return m_map.find(event) != m_map.end();
 }
 
-ScriptHandlerMap &CCEventDispatcher::getScriptEventListenerForEvent(int event)
+ScriptHandlerArray &CCEventDispatcher::getAllScriptEventListenersForEvent(int event)
 {
     ScriptEventHandlerMapIterator it = m_map.find(event);
     CCAssert(it != m_map.end(), "CCEventDispatcher::getScriptEventListenerForEvent() - invalid event");

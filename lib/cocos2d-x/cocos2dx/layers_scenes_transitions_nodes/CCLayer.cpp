@@ -93,43 +93,43 @@ CCLayer *CCLayer::create()
 }
 
 /// Touch and Accelerometer related
-
-void CCLayer::registerWithTouchDispatcher()
-{
-//    CCLOG("CCLAYER: REGISTER WITH TOUCH DISPATHCER");
-    CCTouchDispatcher* pDispatcher = CCDirector::sharedDirector()->getTouchDispatcher();
-
-    // Using LuaBindings
-    if (m_pScriptTouchHandlerEntry)
-    {
-	    if (m_pScriptTouchHandlerEntry->isMultiTouches())
-	    {
-	       pDispatcher->addStandardDelegate(this, 0);
-	       LUALOG("[LUA] Add multi-touches event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
-	    }
-	    else
-	    {
-	       pDispatcher->addTargetedDelegate(this,
-						m_pScriptTouchHandlerEntry->getPriority(),
-						m_pScriptTouchHandlerEntry->getSwallowsTouches());
-	       LUALOG("[LUA] Add touch event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
-	    }
-    }
-    else
-    {
-        if( m_eTouchMode == kCCTouchesAllAtOnce ) {
-            pDispatcher->addStandardDelegate(this, 0);
-        } else {
-            pDispatcher->addTargetedDelegate(this, m_nTouchPriority, true);
-        }
-    }
-}
-
-void CCLayer::unregisterWithTouchDispatcher()
-{
-//    CCLOG("CCLAYER: UNREGISTER WITH TOUCH DISPATHCER");
-                CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
-            }
+//
+//void CCLayer::registerWithTouchDispatcher()
+//{
+//    //    CCLOG("CCLAYER: REGISTER WITH TOUCH DISPATHCER");
+//    CCTouchDispatcher* pDispatcher = CCDirector::sharedDirector()->getTouchDispatcher();
+//
+//    // Using LuaBindings
+//    if (m_pScriptTouchHandlerEntry)
+//    {
+//	    if (m_pScriptTouchHandlerEntry->isMultiTouches())
+//	    {
+//            pDispatcher->addStandardDelegate(this, 0);
+//            LUALOG("[LUA] Add multi-touches event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
+//	    }
+//	    else
+//	    {
+//            pDispatcher->addTargetedDelegate(this,
+//                                             m_pScriptTouchHandlerEntry->getPriority(),
+//                                             m_pScriptTouchHandlerEntry->getSwallowsTouches());
+//            LUALOG("[LUA] Add touch event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
+//	    }
+//    }
+//    else
+//    {
+//        if( m_eTouchMode == kCCTouchesAllAtOnce ) {
+//            pDispatcher->addStandardDelegate(this, 0);
+//        } else {
+//            pDispatcher->addTargetedDelegate(this, m_nTouchPriority, true);
+//        }
+//    }
+//}
+//
+//void CCLayer::unregisterWithTouchDispatcher()
+//{
+//    //    CCLOG("CCLAYER: UNREGISTER WITH TOUCH DISPATHCER");
+//    CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
+//}
 
 /// isAccelerometerEnabled getter
 bool CCLayer::isAccelerometerEnabled()
@@ -297,104 +297,104 @@ void CCLayer::onEnterTransitionDidFinish()
 
     CCNode::onEnterTransitionDidFinish();
 }
-
-int CCLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        return excuteScriptTouchHandler(CCTOUCHBEGAN, pTouch) == 0 ? false : true;
-    }
-
-    CC_UNUSED_PARAM(pTouch);
-    CC_UNUSED_PARAM(pEvent);
-    CCAssert(false, "Layer#ccTouchBegan override me");
-    return true;
-}
-
-int CCLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        return excuteScriptTouchHandler(CCTOUCHMOVED, pTouch);
-    }
-
-    CC_UNUSED_PARAM(pTouch);
-    CC_UNUSED_PARAM(pEvent);
-    return kCCTouchMoved;
-}
-
-void CCLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHENDED, pTouch);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouch);
-    CC_UNUSED_PARAM(pEvent);
-}
-
-void CCLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouch);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouch);
-    CC_UNUSED_PARAM(pEvent);
-}
-
-void CCLayer::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHBEGAN, pTouches);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouches);
-    CC_UNUSED_PARAM(pEvent);
-}
-
-void CCLayer::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHMOVED, pTouches);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouches);
-    CC_UNUSED_PARAM(pEvent);
-}
-
-void CCLayer::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHENDED, pTouches);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouches);
-    CC_UNUSED_PARAM(pEvent);
-}
-
-void CCLayer::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent)
-{
-    if (kScriptTypeNone != m_eScriptType)
-    {
-        excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouches);
-        return;
-    }
-
-    CC_UNUSED_PARAM(pTouches);
-    CC_UNUSED_PARAM(pEvent);
-}
-
+//
+//int CCLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        return excuteScriptTouchHandler(CCTOUCHBEGAN, pTouch) == 0 ? false : true;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouch);
+//    CC_UNUSED_PARAM(pEvent);
+//    CCAssert(false, "Layer#ccTouchBegan override me");
+//    return true;
+//}
+//
+//int CCLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        return excuteScriptTouchHandler(CCTOUCHMOVED, pTouch);
+//    }
+//
+//    CC_UNUSED_PARAM(pTouch);
+//    CC_UNUSED_PARAM(pEvent);
+//    return kCCTouchMoved;
+//}
+//
+//void CCLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHENDED, pTouch);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouch);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
+//void CCLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouch);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouch);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
+//void CCLayer::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHBEGAN, pTouches);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouches);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
+//void CCLayer::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHMOVED, pTouches);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouches);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
+//void CCLayer::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHENDED, pTouches);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouches);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
+//void CCLayer::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent)
+//{
+//    if (kScriptTypeNone != m_eScriptType)
+//    {
+//        excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouches);
+//        return;
+//    }
+//
+//    CC_UNUSED_PARAM(pTouches);
+//    CC_UNUSED_PARAM(pEvent);
+//}
+//
 /// CCLayerColor
 
 CCLayerColor::CCLayerColor()

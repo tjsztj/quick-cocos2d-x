@@ -62,6 +62,9 @@ public:
 
     static CCScene *create(void);
 
+    virtual void registerWithTouchDispatcher(void);
+    virtual void unregisterWithTouchDispatcher(void);
+
     void addTouchableNode(CCNode *node);
     void removeTouchableNode(CCNode *node);
 
@@ -70,6 +73,12 @@ public:
     virtual int ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent);
     virtual void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent);
     virtual void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
+
+    // default implements are used to call script callback if exist
+    virtual int ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
+    virtual int ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
+    virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
+    virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
 
     virtual void visit();
 

@@ -104,7 +104,6 @@ CCNode::CCNode(void)
 , m_cascadeOpacityEnabled(false)
 , m_drawOrder(0)
 , m_bTouchEnabled(false)
-, m_pScriptTouchHandlerEntry(NULL)
 , m_nTouchPriority(0)
 , m_eTouchMode(kCCTouchesOneByOne)
 {
@@ -1559,10 +1558,9 @@ CCScene *CCNode::getScene()
     return dynamic_cast<CCScene*>(scene);
 }
 
-
 void CCNode::registerWithTouchDispatcher()
 {
-    //    CCLOG("CCNODE: REGISTER WITH TOUCH DISPATHCER");
+    //CCLOG("CCNODE: REGISTER WITH TOUCH DISPATHCER");
     CCScene *scene = getScene();
     if (scene)
     {
@@ -1572,7 +1570,7 @@ void CCNode::registerWithTouchDispatcher()
 
 void CCNode::unregisterWithTouchDispatcher()
 {
-    //    CCLOG("CCNODE: REGISTER WITH TOUCH DISPATHCER");
+    //CCLOG("CCNODE: REGISTER WITH TOUCH DISPATHCER");
     CCScene *scene = getScene();
     if (scene)
     {
@@ -1583,31 +1581,44 @@ void CCNode::unregisterWithTouchDispatcher()
 void CCNode::registerScriptTouchHandler(int nHandler, bool bIsMultiTouches, int nPriority, bool bSwallowsTouches)
 {
     unregisterScriptTouchHandler();
-    m_pScriptTouchHandlerEntry = CCTouchScriptHandlerEntry::create(nHandler, bIsMultiTouches, nPriority, bSwallowsTouches);
-    m_pScriptTouchHandlerEntry->retain();
+    addScriptEventListener(TOUCH_EVENT, nHandler);
+    setTouchMode(bIsMultiTouches ? kCCTouchesAllAtOnce : kCCTouchesOneByOne);
+    setTouchPriority(nPriority);
 }
 
 void CCNode::unregisterScriptTouchHandler(void)
 {
-    CC_SAFE_RELEASE_NULL(m_pScriptTouchHandlerEntry);
+    removeAllScriptEventListenersForEvent(TOUCH_EVENT);
 }
 
 int CCNode::excuteScriptTouchHandler(int nEventType, CCTouch *pTouch)
 {
-    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeTouchEvent(this, nEventType, pTouch);
+    if (hasScriptEventListener(TOUCH_EVENT))
+    {
+        return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeTouchEvent(this, nEventType, pTouch);
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 int CCNode::excuteScriptTouchHandler(int nEventType, CCSet *pTouches)
 {
-    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeTouchesEvent(this, nEventType, pTouches);
+    if (hasScriptEventListener(TOUCH_EVENT))
+    {
+        return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeTouchesEvent(this, nEventType, pTouches);
+    }
+    else
+    {
+        return 0;
+    }
 }
 
-/// isTouchEnabled getter
 bool CCNode::isTouchEnabled()
 {
     return m_bTouchEnabled;
 }
-/// isTouchEnabled setter
 
 void CCNode::setTouchEnabled(bool enabled)
 {
@@ -1628,7 +1639,7 @@ void CCNode::setTouchEnabled(bool enabled)
     }
 }
 
-void CCNode::setTouchMode(ccTouchesMode mode)
+void CCNode::setTouchMode(int mode)
 {
     if(m_eTouchMode != mode)
     {
@@ -1716,28 +1727,28 @@ void CCNode::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
     CC_UNUSED_PARAM(pEvent);
 }
 
-void CCNode::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
+int CCNode::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
 {
     if (kScriptTypeNone != m_eScriptType)
     {
-        excuteScriptTouchHandler(CCTOUCHBEGAN, pTouches);
-        return;
+        return excuteScriptTouchHandler(CCTOUCHBEGAN, pTouches);
     }
 
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
+    return 0;
 }
 
-void CCNode::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
+int CCNode::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 {
     if (kScriptTypeNone != m_eScriptType)
     {
-        excuteScriptTouchHandler(CCTOUCHMOVED, pTouches);
-        return;
+        return excuteScriptTouchHandler(CCTOUCHMOVED, pTouches);
     }
-    
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
+    return 0;
 }
 
 void CCNode::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
@@ -1747,7 +1758,7 @@ void CCNode::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
         excuteScriptTouchHandler(CCTOUCHENDED, pTouches);
         return;
     }
-    
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }
@@ -1759,7 +1770,7 @@ void CCNode::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent)
         excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouches);
         return;
     }
-    
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }

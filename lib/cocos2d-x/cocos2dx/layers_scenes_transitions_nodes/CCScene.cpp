@@ -79,12 +79,31 @@ CCScene *CCScene::create()
     }
 }
 
+void CCScene::registerWithTouchDispatcher()
+{
+    CCTouchDispatcher* pDispatcher = CCDirector::sharedDirector()->getTouchDispatcher();
+    m_eTouchMode = kCCTouchesAllAtOnce;
+    if(m_eTouchMode == kCCTouchesAllAtOnce)
+    {
+        pDispatcher->addStandardDelegate(this, 0);
+    }
+    else
+    {
+        pDispatcher->addTargetedDelegate(this, m_nTouchPriority, true);
+    }
+}
+
+void CCScene::unregisterWithTouchDispatcher()
+{
+    CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
+}
+
 void CCScene::addTouchableNode(CCNode *node)
 {
     if (!m_touchableNodes->containsObject(node))
     {
         m_touchableNodes->addObject(node);
-//        CCLOG("ADD TOUCHABLE NODE: %p", node);
+        //CCLOG("CCSCENE: ADD TOUCHABLE NODE: %p", node);
         if (!isTouchEnabled())
         {
             setTouchEnabled(true);
@@ -95,7 +114,7 @@ void CCScene::addTouchableNode(CCNode *node)
 void CCScene::removeTouchableNode(CCNode *node)
 {
     m_touchableNodes->removeObject(node);
-//    CCLOG("REMOVE TOUCHABLE NODE: %p", node);
+    //CCLOG("CCSCENE: REMOVE TOUCHABLE NODE: %p", node);
     if (m_touchableNodes->count() == 0 && isTouchEnabled())
     {
         setTouchEnabled(false);
@@ -214,6 +233,74 @@ void CCScene::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
     m_touchTargets->removeAllObjects();
 }
 
+int CCScene::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
+{
+    for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
+    {
+        CCTouch* pTouch = (CCTouch*)*it;
+        CCLOG("id: %d", pTouch->getID());
+    }
+    // remove all touch targets
+//    m_touchTargets->removeAllObjects();
+
+    // check touch targets
+//    const CCPoint p = pTouch->getLocation();
+//    CCObject *node;
+//    CCNode *touchNode = NULL;
+//    CCNode *checkVisibleNode = NULL;
+//    bool visible = true;
+//    sortAllTouchableNodes(m_touchableNodes);
+//    CCARRAY_FOREACH(m_touchableNodes, node)
+//    {
+//        checkVisibleNode = touchNode = dynamic_cast<CCNode*>(node);
+//
+//        // check node is visible
+//        visible = true;
+//        do
+//        {
+//            visible = visible && checkVisibleNode->isVisible();
+//            checkVisibleNode = checkVisibleNode->getParent();
+//        } while (checkVisibleNode && visible);
+//        if (!visible) continue;
+//
+//        const CCRect boundingBox = touchNode->getCascadeBoundingBox();
+//        if (touchNode->isRunning() && boundingBox.containsPoint(p))
+//        {
+//            touchNode->retain();
+//            int ret = touchNode->ccTouchBegan(pTouch, pEvent);
+//            if (ret == kCCTouchBegan || ret == kCCTouchBeganNoSwallows)
+//            {
+//                m_touchTargets->addObject(touchNode);
+//                if (ret == kCCTouchBegan)
+//                {
+//                    touchNode->release();
+//                    break;
+//                }
+//            }
+//            touchNode->release();
+//        }
+//    }
+//
+//    sortAllTouchableNodes(m_touchTargets);
+//    return kCCTouchBegan;
+    return 0;
+}
+
+int CCScene::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
+{
+    return 0;
+}
+
+void CCScene::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
+{
+
+}
+
+void CCScene::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent)
+{
+
+}
+
 void CCScene::visit()
 {
     g_drawOrder = 0;
@@ -222,22 +309,22 @@ void CCScene::visit()
 
 void CCScene::sortAllTouchableNodes(CCArray *nodes)
 {
-    int i,j,length = nodes->data->num;
-    CCNode ** x = (CCNode**)nodes->data->arr;
+    int i, j, length = nodes->data->num;
+    CCNode **x = (CCNode**)nodes->data->arr;
     CCNode *tempItem;
 
     // insertion sort
-    for(i=1; i<length; i++)
+    for(i = 1; i < length; i++)
     {
         tempItem = x[i];
-        j = i-1;
+        j = i - 1;
 
-        while(j>=0 && (tempItem->m_drawOrder > x[j]->m_drawOrder))
+        while(j >= 0 && (tempItem->m_nTouchPriority <= x[j]->m_nTouchPriority && tempItem->m_drawOrder > x[j]->m_drawOrder))
         {
-            x[j+1] = x[j];
-            j = j-1;
+            x[j + 1] = x[j];
+            j = j - 1;
         }
-        x[j+1] = tempItem;
+        x[j + 1] = tempItem;
     }
 
     // debug

@@ -64,24 +64,6 @@ enum {
     kCCNodeTagInvalid = -1,
 };
 
-typedef enum {
-	kCCTouchesAllAtOnce,
-	kCCTouchesOneByOne,
-} ccTouchesMode;
-
-#define kCCTouchIgnore              0
-
-#define kCCTouchBegan               1
-#define kCCTouchBeganSwallows       kCCTouchBegan
-#define kCCTouchBeganNoSwallows     2
-
-#define kCCTouchMoved               1
-#define kCCTouchMovedSwallows       kCCTouchMoved
-#define kCCTouchMovedNoSwallows     0
-#define kCCTouchMovedReleaseOthers  2
-
-class CCTouchScriptHandlerEntry;
-
 /** @brief CCNode is the main element. Anything that gets drawn or contains things that get drawn is a CCNode.
  The most popular CCNodes are: CCScene, CCLayer, CCSprite, CCMenu.
 
@@ -1495,7 +1477,7 @@ public:
     virtual void unregisterWithTouchDispatcher(void);
 
     /** Register script touch events handler */
-    virtual void registerScriptTouchHandler(int nHandler, bool bIsMultiTouches = false, int nPriority = INT_MIN, bool bSwallowsTouches = false);
+    virtual void registerScriptTouchHandler(int nHandler, bool bIsMultiTouches = false, int nPriority = 0, bool bSwallowsTouches = false);
     /** Unregister script touch events handler */
     virtual void unregisterScriptTouchHandler(void);
 
@@ -1507,14 +1489,12 @@ public:
     virtual bool isTouchEnabled();
     virtual void setTouchEnabled(bool value);
 
-    virtual void setTouchMode(ccTouchesMode mode);
+    virtual void setTouchMode(int mode);
     virtual int getTouchMode();
 
     /** priority of the touch events. Default is 0 */
     virtual void setTouchPriority(int priority);
     virtual int getTouchPriority();
-
-    inline CCTouchScriptHandlerEntry* getScriptTouchHandlerEntry() { return m_pScriptTouchHandlerEntry; };
 
     // default implements are used to call script callback if exist
     virtual int ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
@@ -1523,8 +1503,8 @@ public:
     virtual void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
 
     // default implements are used to call script callback if exist
-    virtual void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
-    virtual void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
+    virtual int ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
+    virtual int ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
     virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
     virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
 
@@ -1627,8 +1607,7 @@ protected:
     // touch events
     bool m_bTouchEnabled;
     int m_nTouchPriority;
-    ccTouchesMode m_eTouchMode;
-    CCTouchScriptHandlerEntry* m_pScriptTouchHandlerEntry;
+    int m_eTouchMode;
 
     virtual int excuteScriptTouchHandler(int nEventType, CCTouch *pTouch);
     virtual int excuteScriptTouchHandler(int nEventType, CCSet *pTouches);

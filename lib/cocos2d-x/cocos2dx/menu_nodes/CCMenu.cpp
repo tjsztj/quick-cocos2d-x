@@ -122,7 +122,7 @@ bool CCMenu::initWithArray(CCArray* pArrayOfItems)
 {
     if (CCLayer::init())
     {
-        setTouchPriority(kCCMenuHandlerPriority);
+//        setTouchPriority(kCCMenuHandlerPriority);
         setTouchMode(kCCTouchesOneByOne);
         setTouchEnabled(true);
 
@@ -217,11 +217,11 @@ void CCMenu::setHandlerPriority(int newPriority)
     pDispatcher->setPriority(newPriority, this);
 }
 
-void CCMenu::registerWithTouchDispatcher()
-{
-    CCDirector* pDirector = CCDirector::sharedDirector();
-    pDirector->getTouchDispatcher()->addTargetedDelegate(this, this->getTouchPriority(), true);
-}
+//void CCMenu::registerWithTouchDispatcher()
+//{
+//    CCDirector* pDirector = CCDirector::sharedDirector();
+//    pDirector->getTouchDispatcher()->addTargetedDelegate(this, this->getTouchPriority(), true);
+//}
 
 int CCMenu::ccTouchBegan(CCTouch* touch, CCEvent* event)
 {

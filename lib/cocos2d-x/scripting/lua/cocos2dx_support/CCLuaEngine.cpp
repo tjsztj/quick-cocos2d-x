@@ -139,11 +139,11 @@ int CCLuaEngine::executeNodeEvent(CCNode* pNode, int nAction, float dt)
     }
     if (pNode->hasScriptEventListener(nAction))
     {
-        ScriptHandlerMap &map = pNode->getScriptEventListenerForEvent(nAction);
-        for (ScriptHandlerMapIterator it = map.begin(); it != map.end(); ++it)
+        ScriptHandlerArray &arr = pNode->getAllScriptEventListenersForEvent(nAction);
+        for (ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
         {
             m_stack->copyValue(1);
-            m_stack->executeFunctionByHandler(it->second, 1);
+            m_stack->executeFunctionByHandler(it->callback, 1);
             m_stack->settop(1);
         }
     }
@@ -206,27 +206,23 @@ int CCLuaEngine::executeSchedule(int nHandler, float dt, CCNode* pNode/* = NULL*
 
 int CCLuaEngine::executeNodeTouchEvent(CCNode* pNode, int eventType, CCTouch *pTouch)
 {
-    CCTouchScriptHandlerEntry* pScriptHandlerEntry = pNode->getScriptTouchHandlerEntry();
-    if (!pScriptHandlerEntry) return 0;
-    int nHandler = pScriptHandlerEntry->getHandler();
-    if (!nHandler) return 0;
-
+    string eventName;
     switch (eventType)
     {
         case CCTOUCHBEGAN:
-            m_stack->pushString("began");
+            eventName = "began";
             break;
 
         case CCTOUCHMOVED:
-            m_stack->pushString("moved");
+            eventName = "moved";
             break;
 
         case CCTOUCHENDED:
-            m_stack->pushString("ended");
+            eventName = "ended";
             break;
 
         case CCTOUCHCANCELLED:
-            m_stack->pushString("cancelled");
+            eventName = "cancelled";
             break;
 
         default:
@@ -235,38 +231,50 @@ int CCLuaEngine::executeNodeTouchEvent(CCNode* pNode, int eventType, CCTouch *pT
 
     const CCPoint pt = CCDirector::sharedDirector()->convertToGL(pTouch->getLocationInView());
     const CCPoint prev = CCDirector::sharedDirector()->convertToGL(pTouch->getPreviousLocationInView());
-    m_stack->pushFloat(pt.x);
-    m_stack->pushFloat(pt.y);
-    m_stack->pushFloat(prev.x);
-    m_stack->pushFloat(prev.y);
-    int ret = m_stack->executeFunctionByHandler(nHandler, 5);
+
+    ScriptHandlerArray &arr = pNode->getAllScriptEventListenersForEvent(TOUCH_EVENT);
+    int ret = 0;
+    bool firstRet = true;
+    for(ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
+    {
+        m_stack->clean();
+        m_stack->pushString(eventName.c_str());
+        m_stack->pushFloat(pt.x);
+        m_stack->pushFloat(pt.y);
+        m_stack->pushFloat(prev.x);
+        m_stack->pushFloat(prev.y);
+        m_stack->pushInt(pTouch->getID());
+        int r = m_stack->executeFunctionByHandler(it->callback, 6);
+        if (firstRet)
+        {
+            ret = r;
+            firstRet = false;
+        }
+    }
+
     m_stack->clean();
     return ret;
 }
 
 int CCLuaEngine::executeNodeTouchesEvent(CCNode* pNode, int eventType, CCSet *pTouches)
 {
-    CCTouchScriptHandlerEntry* pScriptHandlerEntry = pNode->getScriptTouchHandlerEntry();
-    if (!pScriptHandlerEntry) return 0;
-    int nHandler = pScriptHandlerEntry->getHandler();
-    if (!nHandler) return 0;
-
+    string eventName;
     switch (eventType)
     {
         case CCTOUCHBEGAN:
-            m_stack->pushString("began");
+            eventName = "began";
             break;
 
         case CCTOUCHMOVED:
-            m_stack->pushString("moved");
+            eventName = "moved";
             break;
 
         case CCTOUCHENDED:
-            m_stack->pushString("ended");
+            eventName = "ended";
             break;
 
         case CCTOUCHCANCELLED:
-            m_stack->pushString("cancelled");
+            eventName = "cancelled";
             break;
 
         default:
@@ -275,32 +283,47 @@ int CCLuaEngine::executeNodeTouchesEvent(CCNode* pNode, int eventType, CCSet *pT
 
     CCDirector* pDirector = CCDirector::sharedDirector();
     lua_State *L = m_stack->getLuaState();
-    lua_newtable(L);
-    lua_newtable(L);
-    int i = 1;
-    for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
+    ScriptHandlerArray &arr = pNode->getAllScriptEventListenersForEvent(TOUCH_EVENT);
+    int ret = 0;
+    bool firstRet = true;
+    for(ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
     {
-        CCTouch* pTouch = (CCTouch*)*it;
-        const CCPoint pt = pDirector->convertToGL(pTouch->getLocationInView());
-        lua_pushnumber(L, pt.x);
-        lua_rawseti(L, -3, i);
-        lua_pushnumber(L, pt.y);
-        lua_rawseti(L, -3, i + 1);
-        lua_pushinteger(L, pTouch->getID());
-        lua_rawseti(L, -3, i + 2);
+        m_stack->clean();
+        m_stack->pushString(eventName.c_str());
+        lua_newtable(L);                                /* L: event points */
+        lua_newtable(L);                                /* L: event points prevPoints */
 
-        const CCPoint prev = pDirector->convertToGL(pTouch->getPreviousLocationInView());
-        lua_pushnumber(L, prev.x);
-        lua_rawseti(L, -2, i);
-        lua_pushnumber(L, prev.y);
-        lua_rawseti(L, -2, i + 1);
-        lua_pushinteger(L, pTouch->getID());
-        lua_rawseti(L, -2, i + 2);
+        int i = 1;
+        for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
+        {
+            CCTouch* pTouch = (CCTouch*)*it;
+            const CCPoint pt = pDirector->convertToGL(pTouch->getLocationInView());
+            lua_pushnumber(L, pt.x);
+            lua_rawseti(L, -3, i);
+            lua_pushnumber(L, pt.y);
+            lua_rawseti(L, -3, i + 1);
+            lua_pushinteger(L, pTouch->getID());
+            lua_rawseti(L, -3, i + 2);
 
-        i += 3;
+            const CCPoint prev = pDirector->convertToGL(pTouch->getPreviousLocationInView());
+            lua_pushnumber(L, prev.x);
+            lua_rawseti(L, -2, i);
+            lua_pushnumber(L, prev.y);
+            lua_rawseti(L, -2, i + 1);
+            lua_pushinteger(L, pTouch->getID());
+            lua_rawseti(L, -2, i + 2);
+
+            i += 3;
+        }
+
+        int r = m_stack->executeFunctionByHandler(it->callback, 3);
+        if (firstRet)
+        {
+            ret = r;
+            firstRet = false;
+        }
     }
-
-    int ret = m_stack->executeFunctionByHandler(nHandler, 3);
+    
     m_stack->clean();
     return ret;
 }

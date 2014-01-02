@@ -11,6 +11,11 @@ cc.c3 = ccc3
 cc.c4 = ccc4
 cc.c4f = ccc4f
 
+cc.TOUCH_BEGAN_EVENT     = "began"
+cc.TOUCH_MOVED_EVENT     = "moved"
+cc.TOUCH_ENDED_EVENT     = "ended"
+cc.TOUCH_CANCELLED_EVENT = "cancelled"
+
 cc.TOUCH_IGNORE               = 0
 cc.TOUCH_BEGAN                = 1
 cc.TOUCH_BEGAN_SWALLOWS       = cc.TOUCH_BEGAN
@@ -19,8 +24,10 @@ cc.TOUCH_MOVED                = 1
 cc.TOUCH_MOVED_SWALLOWS       = cc.TOUCH_MOVED
 cc.TOUCH_MOVED_NO_SWALLOWS    = 0
 cc.TOUCH_MOVED_RELEASE_OTHERS = 2
-cc.MULTI_TOUCHES_ON           = true
-cc.MULTI_TOUCHES_OFF          = false
+cc.TOUCH_ALL_AT_ONCE          = 0
+cc.TOUCH_ONE_BY_ONE           = 1
+cc.MULTI_TOUCHES_ON           = cc.TOUCH_ALL_AT_ONCE
+cc.MULTI_TOUCHES_OFF          = cc.TOUCH_ONE_BY_ONE
 
 cc.size2t = function(size)
     return {width = size.width, height = size.height}

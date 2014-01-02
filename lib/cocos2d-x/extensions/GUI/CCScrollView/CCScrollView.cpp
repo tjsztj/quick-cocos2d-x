@@ -133,10 +133,10 @@ bool CCScrollView::init()
     return this->initWithViewSize(CCSizeMake(200, 200), NULL);
 }
 
-void CCScrollView::registerWithTouchDispatcher()
-{
-    CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, CCLayer::getTouchPriority(), false);
-}
+//void CCScrollView::registerWithTouchDispatcher()
+//{
+//    CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, CCLayer::getTouchPriority(), false);
+//}
 
 bool CCScrollView::isNodeVisible(CCNode* node)
 {

@@ -1,6 +1,6 @@
 /*
 ** Lua binding: Cocos2d
-** Generated automatically by tolua++-1.0.92 on Fri Dec 20 15:56:03 2013.
+** Generated automatically by tolua++-1.0.92 on Thu Jan  2 15:46:12 2014.
 */
 
 /****************************************************************************
@@ -8007,7 +8007,8 @@ static int tolua_Cocos2d_CCEventDispatcher_addScriptEventListener00(lua_State* t
      !tolua_isusertype(tolua_S,1,"CCEventDispatcher",0,&tolua_err) ||
      !tolua_isnumber(tolua_S,2,0,&tolua_err) ||
      (tolua_isvaluenil(tolua_S,3,&tolua_err) || !toluafix_isfunction(tolua_S,3,"LUA_FUNCTION",0,&tolua_err)) ||
-     !tolua_isnoobj(tolua_S,4,&tolua_err)
+     !tolua_isnumber(tolua_S,4,1,&tolua_err) ||
+     !tolua_isnoobj(tolua_S,5,&tolua_err)
  )
   goto tolua_lerror;
  else
@@ -8016,11 +8017,12 @@ static int tolua_Cocos2d_CCEventDispatcher_addScriptEventListener00(lua_State* t
   CCEventDispatcher* self = (CCEventDispatcher*)  tolua_tousertype(tolua_S,1,0);
   int event = ((int)  tolua_tonumber(tolua_S,2,0));
   LUA_FUNCTION callback = (  toluafix_ref_function(tolua_S,3,0));
+  int priority = ((int)  tolua_tonumber(tolua_S,4,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'addScriptEventListener'", NULL);
 #endif
   {
-   int tolua_ret = (int)  self->addScriptEventListener(event,callback);
+   int tolua_ret = (int)  self->addScriptEventListener(event,callback,priority);
    tolua_pushnumber(tolua_S,(lua_Number)tolua_ret);
   }
  }
@@ -23015,7 +23017,7 @@ static int tolua_Cocos2d_CCNode_setTouchMode00(lua_State* tolua_S)
 #endif
  {
   CCNode* self = (CCNode*)  tolua_tousertype(tolua_S,1,0);
-  ccTouchesMode mode = ((ccTouchesMode) (int)  tolua_tonumber(tolua_S,2,0));
+  int mode = ((int)  tolua_tonumber(tolua_S,2,0));
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in function 'setTouchMode'", NULL);
 #endif
@@ -62783,12 +62785,14 @@ TOLUA_API int tolua_Cocos2d_open (lua_State* tolua_S)
   tolua_constant(tolua_S,"kCCNodeOnExitTransitionDidStart",kCCNodeOnExitTransitionDidStart);
   tolua_constant(tolua_S,"kCCNodeOnCleanup",kCCNodeOnCleanup);
   tolua_constant(tolua_S,"kCCNodeOnEnterFrame",kCCNodeOnEnterFrame);
+  tolua_constant(tolua_S,"kCCNodeOnTouch",kCCNodeOnTouch);
   tolua_constant(tolua_S,"ENTER_SCENE_EVENT",ENTER_SCENE_EVENT);
   tolua_constant(tolua_S,"EXIT_SCENE_EVENT",EXIT_SCENE_EVENT);
   tolua_constant(tolua_S,"ENTER_TRANSITION_DID_FINISH_EVENT",ENTER_TRANSITION_DID_FINISH_EVENT);
   tolua_constant(tolua_S,"EXIT_TRANSITION_DID_START_EVENT",EXIT_TRANSITION_DID_START_EVENT);
   tolua_constant(tolua_S,"CLEANUP_EVENT",CLEANUP_EVENT);
   tolua_constant(tolua_S,"ENTER_FRAME_EVENT",ENTER_FRAME_EVENT);
+  tolua_constant(tolua_S,"TOUCH_EVENT",TOUCH_EVENT);
   tolua_cclass(tolua_S,"CCEventDispatcher","CCEventDispatcher","CCObject",NULL);
   tolua_beginmodule(tolua_S,"CCEventDispatcher");
    tolua_function(tolua_S,"addScriptEventListener",tolua_Cocos2d_CCEventDispatcher_addScriptEventListener00);

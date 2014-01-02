@@ -25,10 +25,8 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-typedef enum {
-    kCCTouchesAllAtOnce,
-    kCCTouchesOneByOne,
-} ccTouchesMode;
+#define kCCTouchesAllAtOnce         0
+#define kCCTouchesOneByOne          1
 
 #define kCCTouchIgnore              0
 #define kCCTouchBegan               1
@@ -980,7 +978,7 @@ class CCNode : public CCEventDispatcher
     void setTouchEnabled(bool value);
     bool isTouchEnabled();
     int getTouchMode();
-    void setTouchMode(ccTouchesMode mode);
+    void setTouchMode(int mode);
     int getTouchPriority();
     void setTouchPriority(int priority);
 };

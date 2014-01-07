@@ -15,41 +15,46 @@ local function newButton(imageName, name, movable, listener)
     end
 
     sprite:setTouchEnabled(true) -- enable sprite touch
-    sprite:addTouchEventListener(function(event, x, y, prevX, prevY)
-        if event == "began" then
+    sprite:addScriptEventListener(cc.Event.TOUCH, function(event)
+        if event.name ~= cc.TOUCH_BEGAN_EVENT then
+            dump(event)
+        end
+        if event.name == cc.TOUCH_BEGAN_EVENT then
             sprite:setOpacity(128)
             -- return cc.TOUCH_BEGAN -- stop event dispatching
             return cc.TOUCH_BEGAN_NO_SWALLOWS -- continue event dispatching
         end
 
-        local touchInSprite = sprite:getCascadeBoundingBox():containsPoint(CCPoint(x, y))
-        if event == "moved" then
+        local touchInSprite = sprite:getCascadeBoundingBox():containsPoint(CCPoint(event.x, event.y))
+        if event.name == cc.TOUCH_MOVED_EVENT then
             sprite:setOpacity(128)
 
             if movable then
-                local offsetX = x - prevX
-                local offsetY = y - prevY
+                local offsetX = event.x - event.prevX
+                local offsetY = event.y - event.prevY
                 local sx, sy = sprite:getPosition()
                 sprite:setPosition(sx + offsetX, sy + offsetY)
                 return cc.TOUCH_MOVED_RELEASE_OTHERS -- stop event dispatching, remove others node
                 -- return cc.TOUCH_MOVED_SWALLOWS -- stop event dispatching
             end
 
-        elseif event == "ended" then
+        elseif event.name == cc.TOUCH_ENDED_EVENT then
             if touchInSprite then listener() end
             sprite:setOpacity(255)
         else
             sprite:setOpacity(255)
         end
-    end, cc.MULTI_TOUCHES_ON)
+    end)
 
     return sprite
 end
 
 function MenuScene:ctor()
-    newButton("GreenButton.png", "GreenButton1", true, function()
+    local button = newButton("GreenButton.png", "GreenButton1", true, function()
         print("GreenButton1 TAP")
     end):addTo(self):pos(display.right - 100, display.bottom + 200)
+    button:setTouchPriority(-1)
+    button:setTouchMode(cc.MULTI_TOUCHES_ON) -- enable mutil-touches
 
     local parentButton = newButton("PinkButton.png", "PinkButton1", true, function()
         print("PinkButton1 TAP")

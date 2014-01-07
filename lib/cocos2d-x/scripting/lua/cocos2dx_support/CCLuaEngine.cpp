@@ -235,16 +235,34 @@ int CCLuaEngine::executeNodeTouchEvent(CCNode* pNode, int eventType, CCTouch *pT
     ScriptHandlerArray &arr = pNode->getAllScriptEventListenersForEvent(TOUCH_EVENT);
     int ret = 0;
     bool firstRet = true;
+    lua_State *L = m_stack->getLuaState();
     for(ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
     {
         m_stack->clean();
-        m_stack->pushString(eventName.c_str());
-        m_stack->pushFloat(pt.x);
-        m_stack->pushFloat(pt.y);
-        m_stack->pushFloat(prev.x);
-        m_stack->pushFloat(prev.y);
-        m_stack->pushInt(pTouch->getID());
-        int r = m_stack->executeFunctionByHandler(it->callback, 6);
+        lua_newtable(L);
+        lua_pushstring(L, "name");
+        lua_pushstring(L, eventName.c_str());
+        lua_rawset(L, -3);
+        lua_pushstring(L, "target");
+        toluafix_pushusertype_ccobject(L, pNode->m_uID, &pNode->m_nLuaID, pNode, "CCNode");
+        lua_rawset(L, -3);
+        lua_pushstring(L, "x");
+        lua_pushnumber(L, pt.x);
+        lua_rawset(L, -3);
+        lua_pushstring(L, "y");
+        lua_pushnumber(L, pt.y);
+        lua_rawset(L, -3);
+        lua_pushstring(L, "prevX");
+        lua_pushnumber(L, prev.x);
+        lua_rawset(L, -3);
+        lua_pushstring(L, "prevY");
+        lua_pushnumber(L, prev.y);
+        lua_rawset(L, -3);
+        lua_pushstring(L, "id");
+        lua_pushinteger(L, pTouch->getID());
+        lua_rawset(L, -3);
+
+        int r = m_stack->executeFunctionByHandler(it->callback, 1);
         if (firstRet)
         {
             ret = r;
@@ -289,34 +307,49 @@ int CCLuaEngine::executeNodeTouchesEvent(CCNode* pNode, int eventType, CCSet *pT
     for(ScriptHandlerArrayIterator it = arr.begin(); it != arr.end(); ++it)
     {
         m_stack->clean();
-        m_stack->pushString(eventName.c_str());
-        lua_newtable(L);                                /* L: event points */
-        lua_newtable(L);                                /* L: event points prevPoints */
-
+        lua_newtable(L);
+        lua_pushstring(L, "name");
+        lua_pushstring(L, eventName.c_str());
+        lua_rawset(L, -3);
+        lua_pushstring(L, "target");
+        toluafix_pushusertype_ccobject(L, pNode->m_uID, &pNode->m_nLuaID, pNode, "CCNode");
+        lua_rawset(L, -3);
+        lua_pushstring(L, "positions");
+        lua_newtable(L);            /* L: event positions t */
+        // event.positions = {
+        //    {x = x, y = y, prevX = prevX, prevY = prevY, id = id},
+        //    {x = x, y = y, prevX = prevX, prevY = prevY, id = id},
+        // }
         int i = 1;
         for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
         {
             CCTouch* pTouch = (CCTouch*)*it;
             const CCPoint pt = pDirector->convertToGL(pTouch->getLocationInView());
-            lua_pushnumber(L, pt.x);
-            lua_rawseti(L, -3, i);
-            lua_pushnumber(L, pt.y);
-            lua_rawseti(L, -3, i + 1);
-            lua_pushinteger(L, pTouch->getID());
-            lua_rawseti(L, -3, i + 2);
-
             const CCPoint prev = pDirector->convertToGL(pTouch->getPreviousLocationInView());
+
+            lua_newtable(L);
+            lua_pushstring(L, "x");
+            lua_pushnumber(L, pt.x);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "y");
+            lua_pushnumber(L, pt.y);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "prevX");
             lua_pushnumber(L, prev.x);
-            lua_rawseti(L, -2, i);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "prevY");
             lua_pushnumber(L, prev.y);
-            lua_rawseti(L, -2, i + 1);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "id");
             lua_pushinteger(L, pTouch->getID());
-            lua_rawseti(L, -2, i + 2);
+            lua_rawset(L, -3);
 
-            i += 3;
+            lua_rawseti(L, -2, i);
+            i++;
         }
+        lua_rawset(L, -3);
 
-        int r = m_stack->executeFunctionByHandler(it->callback, 3);
+        int r = m_stack->executeFunctionByHandler(it->callback, 1);
         if (firstRet)
         {
             ret = r;

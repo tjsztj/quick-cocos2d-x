@@ -59,6 +59,7 @@ function EventProtocol:dispatchEvent(event)
             break
         end
     end
+    event.target = nil
     return self
 end
 
@@ -75,7 +76,7 @@ function EventProtocol:removeEventListener(eventName, key1, key2)
             return handle
         end
     end
-    return self
+    return nil
 end
 
 function EventProtocol:removeAllEventListenersForEvent(eventName)

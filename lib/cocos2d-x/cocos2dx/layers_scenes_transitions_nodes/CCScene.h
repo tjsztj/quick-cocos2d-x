@@ -27,9 +27,25 @@ THE SOFTWARE.
 #ifndef __CCSCENE_H__
 #define __CCSCENE_H__
 
+#include <map>
+
+using namespace std;
+
 #include "layers_scenes_transitions_nodes/CCLayer.h"
 
 NS_CC_BEGIN
+
+// touch id -> CCTouch
+typedef map<int, CCTouch*> TouchIdToTouchObjectMap;
+typedef TouchIdToTouchObjectMap::iterator TouchIdToTouchObjectMapIterator;
+
+// array of touch id
+typedef vector<int> TouchIdArray;
+typedef TouchIdArray::iterator TouchIdArrayIterator;
+
+// CCNode -> array of touch id
+typedef map<CCNode*, TouchIdArray> NodeToTouchIdArrayMap;
+typedef NodeToTouchIdArrayMap::iterator NodeToTouchIdArrayMapIterator;
 
 /**
  * @addtogroup scene
@@ -85,8 +101,10 @@ public:
 protected:
     CCArray *m_touchableNodes;
     CCArray *m_touchTargets;
+    NodeToTouchIdArrayMap m_nodeToTouchIdArrayMap;
 
     void sortAllTouchableNodes(CCArray *nodes);
+    TouchIdToTouchObjectMap makeTouchIdToTouchObjectMap(CCSet *pTouches);
 };
 
 // end of scene group

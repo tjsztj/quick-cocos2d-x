@@ -58,6 +58,7 @@ bool CCScene::init()
          CCDirector * pDirector;
          CC_BREAK_IF( ! (pDirector = CCDirector::sharedDirector()) );
          this->setContentSize(pDirector->getWinSize());
+         m_eTouchMode = kCCTouchesAllAtOnce;
          // success
          bRet = true;
      } while (0);
@@ -233,62 +234,195 @@ void CCScene::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
     m_touchTargets->removeAllObjects();
 }
 
+// multi-touches
+
+bool less_touch_id(const CCObject *a, const CCObject *b)
+{
+    return ((CCTouch*)a)->getID() < ((CCTouch*)b)->getID();
+}
+
 int CCScene::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
 {
+    sortAllTouchableNodes(m_touchableNodes);
+
+    // sort touches by id
+    vector<CCTouch*> touches;
     for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
     {
-        CCTouch* pTouch = (CCTouch*)*it;
-        CCLOG("id: %d", pTouch->getID());
+        touches.push_back((CCTouch*)*it);
     }
-    // remove all touch targets
-//    m_touchTargets->removeAllObjects();
+    sort(touches.begin(), touches.end(), less_touch_id);
 
-    // check touch targets
-//    const CCPoint p = pTouch->getLocation();
-//    CCObject *node;
-//    CCNode *touchNode = NULL;
-//    CCNode *checkVisibleNode = NULL;
-//    bool visible = true;
-//    sortAllTouchableNodes(m_touchableNodes);
-//    CCARRAY_FOREACH(m_touchableNodes, node)
-//    {
-//        checkVisibleNode = touchNode = dynamic_cast<CCNode*>(node);
-//
-//        // check node is visible
-//        visible = true;
-//        do
-//        {
-//            visible = visible && checkVisibleNode->isVisible();
-//            checkVisibleNode = checkVisibleNode->getParent();
-//        } while (checkVisibleNode && visible);
-//        if (!visible) continue;
-//
-//        const CCRect boundingBox = touchNode->getCascadeBoundingBox();
-//        if (touchNode->isRunning() && boundingBox.containsPoint(p))
-//        {
-//            touchNode->retain();
-//            int ret = touchNode->ccTouchBegan(pTouch, pEvent);
-//            if (ret == kCCTouchBegan || ret == kCCTouchBeganNoSwallows)
-//            {
-//                m_touchTargets->addObject(touchNode);
-//                if (ret == kCCTouchBegan)
-//                {
-//                    touchNode->release();
-//                    break;
-//                }
-//            }
-//            touchNode->release();
-//        }
-//    }
-//
-//    sortAllTouchableNodes(m_touchTargets);
-//    return kCCTouchBegan;
-    return 0;
+    // make touch id -> CCTouch map
+    TouchIdToTouchObjectMap touchIdToTouchObjectMap = makeTouchIdToTouchObjectMap(pTouches);
+
+    // iteration all touches, check touch position in nodes
+    m_nodeToTouchIdArrayMap.clear();
+    m_touchTargets->removeAllObjects();
+    CCArray *tmpTouchTargets = CCArray::createWithCapacity(10);
+    for (vector<CCTouch*>::iterator it = touches.begin(); it != touches.end(); ++it)
+    {
+        // get touch position and id
+        CCTouch *touch = *it;
+        const CCPoint touchPosition = touch->getLocation();
+        const int touchId = touch->getID();
+
+        // check touch position in nodes
+        CCObject *node;
+        CCNode *touchNode = NULL;
+        CCNode *checkVisibleNode = NULL;
+        bool visible = true;
+        CCARRAY_FOREACH(m_touchableNodes, node)
+        {
+            checkVisibleNode = touchNode = dynamic_cast<CCNode*>(node);
+
+            // check node is visible
+            visible = true;
+            do
+            {
+                visible = visible && checkVisibleNode->isVisible();
+                checkVisibleNode = checkVisibleNode->getParent();
+            } while (checkVisibleNode && visible);
+            if (!visible) continue;
+
+            // check position in node
+            const CCRect boundingBox = touchNode->getCascadeBoundingBox();
+            if (!touchNode->isRunning() || !boundingBox.containsPoint(touchPosition)) continue;
+
+            // check node touch mode
+            bool nodeNotInMap = m_nodeToTouchIdArrayMap.find(touchNode) == m_nodeToTouchIdArrayMap.end();
+            if (touchNode->getTouchMode() != kCCTouchesOneByOne || nodeNotInMap)
+            {
+                // add node to targets
+                m_nodeToTouchIdArrayMap[touchNode].push_back(touchId);
+                if (nodeNotInMap) tmpTouchTargets->addObject(touchNode);
+            }
+        }
+    }
+
+    CCLOG("-------- BEGAN");
+    sortAllTouchableNodes(tmpTouchTargets);
+    unsigned int count = tmpTouchTargets->count();
+    map<int, bool> ignoredTouchId;
+    for (unsigned int i = 0; i < count; ++i)
+    {
+        CCNode *touchNode = static_cast<CCNode*>(tmpTouchTargets->objectAtIndex(i));
+        TouchIdArray &touchIdArray = m_nodeToTouchIdArrayMap[touchNode];
+        bool removeTouchNode = false;
+        if (touchNode->getTouchMode() == kCCTouchesOneByOne)
+        {
+            // one by one
+//            CCLOG("---- node %p [ONE BY ONE]", touchNode);
+            int touchId = *touchIdArray.begin();
+
+            if (ignoredTouchId.find(touchId) == ignoredTouchId.end())
+            {
+                CCTouch *touch = touchIdToTouchObjectMap[touchId];
+//                CCLOG("  touch id %d, touch object %p", touchId, touch);
+
+                // pass event to node
+                touchNode->retain();
+                int ret = touchNode->ccTouchBegan(touch, pEvent);
+                if (ret == kCCTouchBegan || ret == kCCTouchBeganNoSwallows)
+                {
+                    m_touchTargets->addObject(touchNode);
+                    if (ret == kCCTouchBegan)
+                    {
+                        ignoredTouchId[touchId] = true;
+                    }
+                }
+                else
+                {
+                    removeTouchNode = true;
+                }
+                touchNode->release();
+            }
+            else
+            {
+                removeTouchNode = true;
+            }
+        }
+        else
+        {
+            // all at once
+//            CCLOG("---- node %p [ALL AT ONCE]", touchNode);
+            CCSet *touches = CCSet::create();
+            for (TouchIdArrayIterator touchIdIt = touchIdArray.begin();
+                 touchIdIt != touchIdArray.end();
+                 ++touchIdIt)
+            {
+                touches->addObject(touchIdToTouchObjectMap[*touchIdIt]);
+//                CCLOG("  touch id %d, touch object %p", *touchIdIt, touchIdToTouchObjectMap[*touchIdIt]);
+            }
+
+            touchNode->retain();
+            int ret = touchNode->ccTouchesBegan(touches, pEvent);
+            if (ret == kCCTouchBegan || ret == kCCTouchBeganNoSwallows)
+            {
+                m_touchTargets->addObject(touchNode);
+            }
+            else
+            {
+                removeTouchNode = true;
+            }
+            touchNode->release();
+        }
+
+        if (removeTouchNode)
+        {
+            m_nodeToTouchIdArrayMap.erase(touchNode);
+            tmpTouchTargets->removeObjectAtIndex(i);
+            i--;
+            count--;
+        }
+    }
+
+    sortAllTouchableNodes(m_touchTargets);
+    return kCCTouchBegan;
 }
 
 int CCScene::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 {
-    return 0;
+    TouchIdToTouchObjectMap touchIdToTouchObjectMap = makeTouchIdToTouchObjectMap(pTouches);
+
+    CCLOG("-------- MOVED");
+    unsigned int count = m_touchTargets->count();
+    for (unsigned int i = 0; i < count; ++i)
+    {
+        CCNode *touchNode = static_cast<CCNode*>(m_touchTargets->objectAtIndex(i));
+        TouchIdArray &touchIdArray = m_nodeToTouchIdArrayMap[touchNode];
+        if (touchNode->getTouchMode() == kCCTouchesOneByOne)
+        {
+            CCLOG("---- node %p [ONE BY ONE]", touchNode);
+            int touchId = *touchIdArray.begin();
+            CCLOG("  touch id %d, touch object %p", touchId, touchIdToTouchObjectMap[touchId]);
+        }
+        else
+        {
+            CCLOG("---- node %p [ALL AT ONES]", touchNode);
+            CCSet *touches = CCSet::create();
+            for (TouchIdArrayIterator touchIdIt = touchIdArray.begin();
+                 touchIdIt != touchIdArray.end();
+                 ++touchIdIt)
+            {
+                touches->addObject(touchIdToTouchObjectMap[*touchIdIt]);
+                CCLOG("  touch id %d, touch object %p", *touchIdIt, touchIdToTouchObjectMap[*touchIdIt]);
+            }
+
+            touchNode->retain();
+            int ret = touchNode->ccTouchesBegan(touches, pEvent);
+            if (ret != kCCTouchBegan && ret != kCCTouchBeganNoSwallows)
+            {
+                m_nodeToTouchIdArrayMap.erase(touchNode);
+                m_touchTargets->removeObjectAtIndex(i);
+                i--;
+                count--;
+            }
+            touchNode->release();
+        }
+    }
+
+    return kCCTouchMoved;
 }
 
 void CCScene::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
@@ -334,6 +468,17 @@ void CCScene::sortAllTouchableNodes(CCArray *nodes)
 //        tempItem = x[i];
 //        CCLOG("[%03d] m_drawOrder = %u, w = %0.2f, h = %0.2f", i, tempItem->m_drawOrder, tempItem->getCascadeBoundingBox().size.width, tempItem->getCascadeBoundingBox().size.height);
 //    }
+}
+
+TouchIdToTouchObjectMap CCScene::makeTouchIdToTouchObjectMap(CCSet *pTouches)
+{
+    TouchIdToTouchObjectMap map;
+    for (CCSetIterator it = pTouches->begin(); it != pTouches->end(); ++it)
+    {
+        CCTouch *touch = (CCTouch*)*it;
+        map[touch->getID()] = touch;
+    }
+    return map;
 }
 
 NS_CC_END

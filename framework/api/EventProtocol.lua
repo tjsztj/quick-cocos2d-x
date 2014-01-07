@@ -30,6 +30,7 @@ function EventProtocol.extend(object)
                 object.listeners_[eventName][handle] = nil
             end
         end
+        event.target = nil
     end
 
     function object:removeEventListener(eventName, key)

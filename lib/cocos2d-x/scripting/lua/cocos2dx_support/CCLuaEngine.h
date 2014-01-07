@@ -27,6 +27,7 @@
 
 extern "C" {
 #include "lua.h"
+#include "tolua_fix.h"
 }
 
 #include "ccTypes.h"
